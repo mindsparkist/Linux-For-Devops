@@ -113,3 +113,58 @@ In interviews, you will be asked to translate numeric permissions. They are simp
 
 **The Takeaway:** A massive percentage of deployment bottlenecks—from Docker containers failing to write to mounted volumes, to automation pipelines crashing with `Permission denied`—boil down to ownership and access. Mastering `chown` to assign the correct service accounts and `chmod` to enforce the principle of least privilege is mandatory for secure infrastructure.
 
+Because you have a large list of commands here, throwing them all into one giant block will ruin the scannability of your repository. 
+
+To keep it clean and modular for your readers, I have broken this list down into three distinct operational concepts: **File Lifecycle**, **File Inspection**, and **Search & Manipulation**. *(Note: I omitted `chown` here, as we perfectly captured it in the previous "Permissions" entry!)*
+
+Here are the next three entries for your repo.
+
+***
+
+## Concept: File Lifecycle Operations (`touch`, `cp`, `mv`, `rm`)
+
+**The Big Picture:** These commands handle the fundamental creation, duplication, relocation, and destruction of files and directories within the Linux file system. 
+
+**Practical Example:**
+Imagine managing physical paperwork on an office desk.
+* **`touch` (Create/Timestamp):** This is pulling out a blank sheet of paper. If you `touch new_file.txt`, it creates an empty file. If the file already exists, it simply updates the "last modified" timestamp to right now.
+* **`cp` (Copy):** The photocopier. `cp file.txt /backup/` creates an exact duplicate in the target location. *(Mentor Tip: Add `-r` to copy entire directories recursively).*
+* **`mv` (Move/Rename):** The physical relocation. In Linux, moving a file and renaming a file are the exact same operation. `mv file.txt new_name.txt` renames it. `mv file.txt /archive/` moves it.
+* **`rm` (Remove):** The paper shredder. **Linux has no recycling bin.** Once you execute `rm file.txt`, it is gone. *(Mentor Tip: `rm -rf /folder` forcefully deletes a directory and everything inside it. Use with extreme caution).*
+
+**The Takeaway:** `mv` acts as both your move and rename tool. Always double-check your target paths before using `rm`, especially when operating as the root user.
+
+***
+
+## Concept: File Inspection (`cat`, `less`, `head`, `tail`)
+
+**The Big Picture:** When you need to read configuration files or logs, opening them in a full text editor (like `vim` or `nano`) is often unnecessary and risky (you might accidentally modify them). These commands allow you to safely output file contents directly to your terminal screen.
+
+**Practical Example:**
+Imagine reviewing a 1,000-page printed server logbook.
+* **`cat` (Concatenate):** Dumps the entire 1,000-page book onto your desk at once. The terminal instantly scrolls to the very bottom. Excellent for reading tiny, 10-line config files, but terrible for large logs.
+* **`less` (Pager):** Lets you read the book page by page. You can use your arrow keys to scroll up and down, and press `/` to search for keywords. Press `q` to quit.
+* **`head` (Top Lines):** Reads only the Table of Contents. By default, it prints the first 10 lines of a file. 
+* **`tail` (Bottom Lines):** Reads only the final page. By default, it prints the last 10 lines. 
+    * *The Superpower:* **`tail -f app.log`** "Follows" the file. As the application writes new logs, they stream down your screen in real-time.
+
+**The Takeaway:** Never `cat` a massive log file, as it will freeze your terminal. Use `less` for safe exploration and `tail -f` for live debugging during deployments.
+
+***
+
+## Concept: Search & Text Processing (`find`, `grep`, `awk`, `sed`)
+
+**The Big Picture:** These are the surgical instruments of the command line. They allow you to locate specific files across a massive file system, search *inside* those files for specific data, and programmatically manipulate text streams. They form the backbone of bash scripting.
+
+**Practical Example:**
+Imagine hunting for a specific error in a warehouse of filing cabinets.
+* **`find` (The Archivist):** Searches the file system for files based on metadata (name, size, modification date). 
+    * *Example:* `find /var/log -name "*.log"` finds every file ending in `.log` inside the `/var/log` directory.
+* **`grep` (The Magnifying Glass):** Searches *inside* text for a specific pattern or keyword.
+    * *Example:* `grep -i "error" server.log` prints every line containing the word "error" (case-insensitive).
+* **`awk` (The Column Extractor):** A powerful programming language designed for columnar data. If your log file separates data with spaces, `awk` can extract specific columns.
+    * *Example:* `awk '{print $3}' network.log` prints only the 3rd column (e.g., the IP addresses) of every line.
+* **`sed` (The Stream Editor):** The programmatic find-and-replace machine. It edits text on the fly without needing to open the file.
+    * *Example:* `sed 's/v1.0/v2.0/g' config.yaml` replaces every instance of "v1.0" with "v2.0".
+
+**The Takeaway:** The true power of Linux comes from "piping" (`|`) these commands together. For instance, you can `find` all logs, pipe them to `grep` to isolate the errors, and pipe that to `awk` to extract the exact IP addresses causing the issue—all in a single line of code.
